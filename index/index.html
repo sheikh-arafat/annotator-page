@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Prolific Annotation Task</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 2em; }
+    #context { 
+      margin-bottom: 1em; 
+      padding: 1em; 
+      border: 1px solid #ccc; 
+      background: #f9f9f9; 
+    }
+    .label-option { margin: 0.5em 0; }
+    button { margin-top: 1em; padding: 0.5em 1em; }
+  </style>
+</head>
+<body>
+  <h1>Annotation Task</h1>
+  <div id="context">Loading…</div>
+  <form id="annotate">
+    <div class="label-option">
+      <label><input type="radio" name="label" value="Label 1" required> Label 1</label>
+    </div>
+    <div class="label-option">
+      <label><input type="radio" name="label" value="Label 2"> Label 2</label>
+    </div>
+    <div class="label-option">
+      <label><input type="radio" name="label" value="Label 3"> Label 3</label>
+    </div>
+    <div class="label-option">
+      <label><input type="radio" name="label" value="Label 4"> Label 4</label>
+    </div>
+    <div class="label-option">
+      <label><input type="radio" name="label" value="Label 5"> Label 5</label>
+    </div>
+    <div class="label-option">
+      <label><input type="radio" name="label" value="Label 6"> Label 6</label>
+    </div>
+    <button type="submit">Submit</button>
+  </form>
+
+  <script>
+    // 1) Parse URL parameters
+    const params      = new URLSearchParams(window.location.search);
+    const contextText = params.get('context')     || 'No context provided.';
+    const prolificPID = params.get('PROLIFIC_PID')|| '';
+    const studyID     = params.get('STUDY_ID')    || '';
+    const sessionID   = params.get('SESSION_ID')  || '';
+
+    // 2) Configure your endpoints / codes
+    const webhookURL     = 'https://your-webhook.example.com/collect';    // ← REPLACE this
+    const completionCode = 'COMPLETION_CODE';                             // ← REPLACE this
+
+    // 3) Display the context
+    document.getElementById('context').innerText = contextText;
+
+    // 4) Handle form submission
+    document.getElementById('annotate').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const label = document.querySelector('input[name="label"]:checked').value;
+
+      const payload = {
+        context:      contextText,
+        label,
+        prolific_pid: prolificPID,
+        study_id:     studyID,
+        session_id:   sessionID,
+        timestamp:    new Date().toISOString()
+      };
+
+      try {
+        const res = await fetch(webhookURL, {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify(payload)
+        });
+        if (!res.ok) {
+          const errText = await res.text();
+          throw new Error(errText);
+        }
+        // 5) On success, redirect to Prolific to mark the task complete
+        window.location.href = 
+          `https://app.prolific.co/submissions/complete?cc=${completionCode}`;
+      } catch (err) {
+        console.error('Submission error:', err);
+        alert('Submission failed—please try again.');
+      }
+    });
+  </script>
+</body>
+</html>
